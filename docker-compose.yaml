@@ -1,0 +1,49 @@
+version: "3"
+
+services:
+    rabbit:
+        container_name: rabbit
+        image: rabbitmq:3-management
+        environment:
+            RABBITMQ_DEFAULT_USER: ""
+            RABBITMQ_DEFAULT_PASS: ""
+            RABBITMQ_DEFAULT_VHOST: "devhost"
+        expose:
+            - "5672"
+        ports:
+            - "5672:5672"
+            - "15672:15672"
+        volumes:
+            - "./docker-data/rabbitmq/:/var/lib/rabbitmq/"
+        networks:
+            - network
+
+    site:
+        container_name: site
+        image: php:7.4-apache
+        build:
+            context: .
+        depends_on:
+            - rabbit
+        volumes:
+            - ./docker-config/vhosts:/etc/apache2/sites-enabled
+            - ./:/var/www/html/
+        ports:
+            - "1001:80"
+        networks:
+            - network
+
+    mailer:
+        container_name: mailer
+        image: mailhog/mailhog
+        ports:
+            - "1025:1025"
+            - "8025:8025"
+        depends_on:
+            - site
+        networks:
+            - network
+
+networks:
+    network:
+        driver: bridge
